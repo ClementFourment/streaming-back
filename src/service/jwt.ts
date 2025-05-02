@@ -1,0 +1,4 @@
+const JWT_SECRET = '1370fdfc26785b49427fd4ae84d252c7bdaf3f265bbcccb637efc9ea2f39095d440bf00722a0ed62e6a18d780a8e6b1511400cd4c5e9609ff6b7dab47abf0f8c';
+
+
+export default JWT_SECRET;

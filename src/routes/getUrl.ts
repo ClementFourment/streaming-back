@@ -1,0 +1,28 @@
+import express, { Express, Request, Response } from 'express';
+import sources from '../service/sources';
+
+
+module.exports = (app: Express) => {
+    app.get('/get-temporary-url', async (req: Request, res: Response) => {
+
+        const title = req.query.title as string;
+        const episode = req.query.episode as string;
+      
+        if (!title || title == "" || !episode || episode == "") {
+          res.status(400).json({ error: 'Titre et épisode de vidéo requis.' });
+          return;
+        }
+        const sourceFound = sources.find(source => source.title === title);
+        if (!sourceFound || !sourceFound.src) {
+          res.status(400).json({ error: 'Titre non trouvé.' });
+          return;
+        }
+        
+        const classe = new sourceFound.src();
+      
+        const url = await classe.getUrl(req, res, +episode-1);
+      
+        res.json({url});
+        
+      });
+}
