@@ -2213,223 +2213,72 @@ private urls = {
 };
 
 
+private async extractMediaUrl(url: string): Promise<string | null> {
+  const browser = await puppeteer.launch({ headless: true });
+  let mediaUrl: string | null = null;
+
+  try {
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+    // Supprimer les popups
+    const popupHandler = async (target: any) => {
+      if (target.type() === 'page') {
+        const popup = await target.page();
+        await popup?.close();
+        console.log('❌ Popup fermé automatiquement.');
+      }
+    };
+    browser.on('targetcreated', popupHandler);
+
+    page.on('request', request => {
+      const requestUrl = request.url();
+
+      // 1. URL directe : .mp4 ou .m3u8
+      if (requestUrl.match(/\.(mp4|m3u8)(\?|$)/)) {
+        console.log('🎯 Média direct trouvé :', requestUrl);
+        mediaUrl = requestUrl;
+      }
+    });
+
+    await page.waitForSelector('video', { timeout: 3000 }).catch(() => {});
+    for (let i = 0; i < 5; i++) {
+      try {
+        await page.click('video');
+      } catch (_) {}
+    }
+
+    if (!mediaUrl) {
+      try {
+        const request = await page.waitForRequest(req => {
+          const url = req.url();
+          return url.includes('.mp4') || url.includes('master.m3u8');
+        }, { timeout: 3000 });
+        mediaUrl = request.url();
+      } catch (_) {}
+    }
+
+    return mediaUrl;
+  } catch (error) {
+    console.error(`❌ Erreur lors de l'extraction de ${url}:`, error);
+    return null;
+  } finally {
+    await browser.close();
+  }
+}
 
 public async getUrl(req: Request, res: Response, episode: number) {
+  const urls = [this.urls.urls1[episode], this.urls.urls2[episode]];
 
-  const urls: string[] = [this.urls.urls1[episode], this.urls.urls2[episode]];
-
-    try {
-        const browser = await puppeteer.launch({ 
-          headless: true 
-        });
-        const page1 = await browser.newPage();
-        console.log(urls[0])
-        await page1.goto("urls[0]", { waitUntil: 'domcontentloaded' });
-        
-        browser.on('targetcreated', async target => {
-          if (target.type() === 'page') {
-            console.log('🚫 Popup détecté !');
-            const popup = await target.page();
-            await popup?.close();
-            console.log('❌ Popup fermé automatiquement.');
-          }
-        });
-
-
-        let mediaUrlBeforeClick: string | null = null;
-
-        page1.on('request', (request) => {
-          const url = request.url();
-          if (url.includes('.mp4') || url.includes('master.m3u8')) {
-            console.log('🎯 Média trouvé avant le clic:', url);
-            mediaUrlBeforeClick = url; 
-          }
-        });
-
-        if (mediaUrlBeforeClick) {
-          await browser.close();
-          return mediaUrlBeforeClick;
-        }
-        console.log('rien trouvé avant le click')
-        await page1.waitForSelector('video');
-        for (let i = 0; i < 5; i++) {
-          await page1.click('video');
-        }
-        console.log('🖱️ Bouton cliqué.');
-    
-        try {
-          const mediaRequest = await page1.waitForRequest(request => {
-            const url = request.url();
-            return url.includes('.mp4') || url.includes('master.m3u8');
-          }, { timeout: 3000 });
-
-          console.log('🎯 Media détecté :', mediaRequest.url());
-    
-        
-          await browser.close();
-      
-          return mediaRequest.url();
-        }
-        catch(e) {
-          if (mediaUrlBeforeClick) {
-            await browser.close();
-            return mediaUrlBeforeClick;
-          }
-          else {
-            //2e round
-            try {
-  
-              const page2 = await browser.newPage();
-              console.log(urls[1])
-              await page2.goto(urls[1], { waitUntil: 'domcontentloaded' });
-              
-              browser.on('targetcreated', async target => {
-                if (target.type() === 'page') {
-                  console.log('🚫 Popup détecté !');
-                  const popup = await target.page();
-                  await popup?.close();
-                  console.log('❌ Popup fermé automatiquement.');
-                }
-              });
-            
-            
-              let mediaUrlBeforeClick: string | null = null;
-            
-              page2.on('request', (request) => {
-                const url = request.url();
-                if (url.includes('.mp4') || url.includes('master.m3u8')) {
-                  console.log('🎯 Média trouvé avant le clic:', url);
-                  mediaUrlBeforeClick = url; 
-                }
-              });
-            
-              if (mediaUrlBeforeClick) {
-                await browser.close();
-                return mediaUrlBeforeClick;
-              }
-              console.log('rien trouvé avant le click')
-              await page2.waitForSelector('video');
-              for (let i = 0; i < 5; i++) {
-                await page2.click('video');
-              }
-              console.log('🖱️ Bouton cliqué.');
-            
-              try {
-                const mediaRequest = await page2.waitForRequest(request => {
-                  const url = request.url();
-                  return url.includes('.mp4') || url.includes('master.m3u8');
-                }, { timeout: 3000 });
-            
-                console.log('🎯 Media détecté :', mediaRequest.url());
-            
-              
-                await browser.close();
-            
-                return mediaRequest.url();
-              }
-              catch(e) {
-                if (mediaUrlBeforeClick) {
-                  await browser.close();
-                  return mediaUrlBeforeClick;
-                }
-                console.log('erreur');
-                await browser.close();
-              }
-              
-              
-              await browser.close();
-            
-            
-            } catch (error) {
-              console.error('Erreur:', error);
-              res.status(500).json({ error: 'Erreur serveur.' });
-              return;
-            }
-          }
-          console.log('erreur');
-          await browser.close();
-        }
-        
-        
-        await browser.close();
-    
-    
-      } catch (error) {
-        // 2e round aussi 
-        try {
-          const browser = await puppeteer.launch({ 
-            headless: true 
-          });
-          const page2 = await browser.newPage();
-          console.log(urls[1])
-          await page2.goto(urls[1], { waitUntil: 'domcontentloaded' });
-          
-          browser.on('targetcreated', async target => {
-            if (target.type() === 'page') {
-              console.log('🚫 Popup détecté !');
-              const popup = await target.page();
-              await popup?.close();
-              console.log('❌ Popup fermé automatiquement.');
-            }
-          });
-        
-        
-          let mediaUrlBeforeClick: string | null = null;
-        
-          page2.on('request', (request) => {
-            const url = request.url();
-            if (url.includes('.mp4') || url.includes('master.m3u8')) {
-              console.log('🎯 Média trouvé avant le clic:', url);
-              mediaUrlBeforeClick = url; 
-            }
-          });
-        
-          if (mediaUrlBeforeClick) {
-            await browser.close();
-            return mediaUrlBeforeClick;
-          }
-          console.log('rien trouvé avant le click')
-          await page2.waitForSelector('video');
-          for (let i = 0; i < 5; i++) {
-            await page2.click('video');
-          }
-          console.log('🖱️ Bouton cliqué.');
-        
-          try {
-            const mediaRequest = await page2.waitForRequest(request => {
-              const url = request.url();
-              return url.includes('.mp4') || url.includes('master.m3u8');
-            }, { timeout: 3000 });
-        
-            console.log('🎯 Media détecté :', mediaRequest.url());
-        
-          
-            await browser.close();
-        
-            return mediaRequest.url();
-          }
-          catch(e) {
-            if (mediaUrlBeforeClick) {
-              await browser.close();
-              return mediaUrlBeforeClick;
-            }
-            console.log('erreur');
-            await browser.close();
-          }
-          
-          
-          await browser.close();
-        
-        
-        } catch (error) {
-          console.error('Erreur:', error);
-          res.status(500).json({ error: 'Erreur serveur.' });
-          return;
-        }
-        console.error('Erreur:', error);
-        res.status(500).json({ error: 'Erreur serveur.' });
-        return;
-      }
+  for (const url of urls) {
+    const mediaUrl = await this.extractMediaUrl(url);
+    if (mediaUrl) {
+      return mediaUrl;
+    }
   }
 
+  console.error('🚫 Aucune URL de média trouvée');
+  res.status(500).json({ error: 'Aucune source vidéo détectée.' });
+  return;
+}
 }

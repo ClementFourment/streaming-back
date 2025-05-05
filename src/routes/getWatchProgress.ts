@@ -1,5 +1,4 @@
 import express, { Express, Request, Response } from 'express';
-import sources from '../service/sources';
 import { authenticateToken } from '../middleware/auth'
 import { WatchProgress } from '../class/watch-progress';
 
@@ -14,6 +13,11 @@ module.exports = (app: Express) => {
 
         const title = req.query.title as string;
         
+        if (!title || title == "") {
+            res.status(400).json({ error: 'Titre et épisode de vidéo requis.' });
+            return;
+          }
+          
         const progress = await WatchProgress.findAll({ where: { userId: user.userId, title: title } });
         res.json(progress);
         

@@ -31,6 +31,8 @@ require('./src/routes/getSources')(app);
 require('./src/routes/getWatchProgress')(app);
 require('./src/routes/addWatchProgress')(app);
 require('./src/routes/updateWatchProgress')(app);
+require('./src/routes/getEpisode')(app);
+
 
 app.listen(port, () => {
   console.log(`Serveur démarré sur http://localhost:${port}`);
