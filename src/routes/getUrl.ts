@@ -20,9 +20,13 @@ module.exports = (app: Express) => {
         
         const classe = new sourceFound.src();
       
-        const url = await classe.getUrl(req, res, +episode-1);
-      
-        res.json({url});
+        try {
+          const url = await classe.getUrl(req, res, +episode-1);
+          res.json({ url });
+        } catch (error) {
+          console.error('Erreur dans getUrl:', error);
+          res.status(500).json({ error: 'Erreur serveur.' });
+        }
         
       });
 }
