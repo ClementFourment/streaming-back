@@ -13,7 +13,7 @@ const port = 3000;
 
 
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: ['https://369e-2a04-cec2-b-c01a-b161-1e7-5775-652c.ngrok-free.app', 'http://localhost:4200'],
   credentials: true 
 }));
 app.use(bodyParser.json());
@@ -32,7 +32,9 @@ require('./src/routes/getWatchProgress')(app);
 require('./src/routes/addWatchProgress')(app);
 require('./src/routes/updateWatchProgress')(app);
 require('./src/routes/getEpisode')(app);
-
+require('./src/routes/getThumbnails')(app);
+require('./src/routes/harryPotter')(app);
+require('./src/routes/ageDeGlace')(app);
 
 app.listen(port, () => {
   console.log(`Serveur démarré sur http://localhost:${port}`);

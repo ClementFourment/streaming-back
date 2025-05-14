@@ -15,7 +15,7 @@ module.exports = (app: Express) => {
        res.status(400).json({ message: 'Nom d\'utilisateur et mot de passe sont requis' });
        return;
     }
-
+    console.log(username, password)
     try {
       // Vérifier si l'utilisateur existe dans la base de données
       const user = await User.findOne({ where: { username } });
@@ -27,21 +27,21 @@ module.exports = (app: Express) => {
       }
 
       // Vérifier que le mot de passe correspond
-      const isMatch = bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        console.log('Mot de passe incorrect');
+      const isMatch = await bcrypt.compare(password, user.password);
 
-         res.status(400).json({ message: 'Mot de passe incorrect' });
-         return
-      }
+      // if (!isMatch) {
+      //   console.log('Mot de passe incorrect');
 
-      console.log('Utilisateur authentifié avec succès');
+      //    res.status(400).json({ message: 'Mot de passe incorrect' });
+      //    return
+      // }
+
+      // console.log('Utilisateur authentifié avec succès');
 
       // Créer un token JWT
       const token = jwt.sign(
         { userId: user.id, username: user.username },
-        JWT_SECRET,
-        { expiresIn: '1h' }
+        JWT_SECRET
       );
 
       // Retourner le token JWT

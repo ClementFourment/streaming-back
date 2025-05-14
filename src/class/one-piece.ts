@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import puppeteer from 'puppeteer';
+const axios = require('axios');
 
 export class OnePiece {
 
@@ -2213,75 +2214,158 @@ private urls = {
 };
 
 
-private async extractMediaUrl(url: string): Promise<string | null> {
-  const browser = await puppeteer.launch({ headless: true });
-  let mediaUrl: string | null = null;
-
-  try {
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-
-    // Supprimer les popups
-    const popupHandler = async (target: any) => {
-      if (target.type() === 'page') {
-        const popup = await target.page();
-        await popup?.close();
-        console.log('❌ Popup fermé automatiquement.');
-      }
-    };
-    browser.on('targetcreated', popupHandler);
-
-    page.on('request', request => {
-      const requestUrl = request.url();
-
-      // 1. URL directe : .mp4 
-      if (requestUrl.match(/\.(mp4\?)/)) {
-        console.log('🎯 Média direct trouvé :', requestUrl);
-        mediaUrl = requestUrl;
-      }
-    });
-
-    await page.waitForSelector('video', { timeout: 3000 }).catch(() => {});
-    for (let i = 0; i < 5; i++) {
-      try {
-        await page.click('video');
-      } catch (_) {}
-    }
-
-    if (!mediaUrl) {
-      try {
-        const request = await page.waitForRequest(req => {
-          const url = req.url();
-          if (url.includes('.mp4') && url.includes('?')) {
-            return true;
-          }
-          return false;
-        }, { timeout: 3000 });
-        mediaUrl = request.url();
-      } catch (_) {}
-    }
-
-    return mediaUrl;
-  } catch (error) {
-    console.error(`❌ Erreur lors de l'extraction de ${url}:`, error);
-    return null;
-  } finally {
-    await browser.close();
+  public getNbEpisodes() {
+    return this.urls.urls2.length;
   }
-}
+  private async extractMediaUrl(url: string): Promise<string | null> {
+    const browser = await puppeteer.launch({ headless: true });
+    let mediaUrl: string | null = null;
 
-public async getUrl(req: Request, res: Response, episode: number) {
-  const urls = [this.urls.urls1[episode], this.urls.urls2[episode]];
+    try {
+      const page = await browser.newPage();
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-  for (const url of urls) {
-    const mediaUrl = await this.extractMediaUrl(url);
-    if (mediaUrl) {
+      // Supprimer les popups
+      const popupHandler = async (target: any) => {
+        if (target.type() === 'page') {
+          const popup = await target.page();
+          await popup?.close();
+        }
+      };
+      browser.on('targetcreated', popupHandler);
+
+      page.on('request', request => {
+        const requestUrl = request.url();
+
+        // 1. URL directe : .mp4 
+        if (requestUrl.match(/\.(mp4\?)/)) {
+          mediaUrl = requestUrl;
+        }
+      });
+
+      await page.waitForSelector('video', { timeout: 3000 }).catch(() => {});
+      for (let i = 0; i < 5; i++) {
+        try {
+          await page.click('video');
+        } catch (_) {}
+      }
+
+      if (!mediaUrl) {
+        try {
+          const request = await page.waitForRequest(req => {
+            const url = req.url();
+            if (url.includes('.mp4') && url.includes('?')) {
+              return true;
+            }
+            return false;
+          }, { timeout: 3000 });
+          mediaUrl = request.url();
+        } catch (_) {}
+      }
+
       return mediaUrl;
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'extraction de ${url}:`, error);
+      return null;
+    } finally {
+      await browser.close();
     }
   }
 
-  console.error('🚫 Aucune URL de média trouvée');
-  res.status(500).json({ error: 'Aucune source vidéo détectée.' });
-  return;
-}
+  public async getUrl(req: Request, res: Response, episode: number) {
+    const urls = [this.urls.urls1[episode - 1], this.urls.urls2[episode - 1]];
+
+    for (const url of urls) {
+      const mediaUrl = await this.extractMediaUrl(url);
+      if (mediaUrl) {
+        return mediaUrl;
+      }
+    }
+
+    res.status(500).json({ error: 'Aucune source vidéo détectée.' });
+    return;
+  }
+
+
+  public async getThumbnails (req: Request, res: Response, episode: number) {
+    const url = await this.extractUrlThumnails(episode);
+    if (!url) {
+      return;
+    }
+
+    const thumbnails = await this.getContentThumbnails(url);
+    return thumbnails;
+  }
+
+  private async getContentThumbnails(url: string) {
+
+    const response = await axios.get(url);
+    const lines = response.data.split('\n');
+
+    const thumbnails = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const timeRegex = /^(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})$/;
+
+      if (timeRegex.test(lines[i])) {
+        const [, start, end] = lines[i].match(timeRegex);
+        const urlLine = lines[i + 1]?.trim();
+
+        if (urlLine && urlLine.startsWith('http')) {
+          const [url, fragment] = urlLine.split('#');
+          const crop = fragment?.replace('xywh=', '')?.split(',').map(Number);
+
+          thumbnails.push({
+            start,
+            end,
+            image: url,
+            crop: {
+              x: crop?.[0],
+              y: crop?.[1],
+              width: crop?.[2],
+              height: crop?.[3],
+            },
+          });
+        }
+      }
+    }
+    return thumbnails;
+  }
+
+  private async extractUrlThumnails(episode: number){
+    
+    const url = this.urls.urls1[episode - 1];
+    const browser = await puppeteer.launch({ headless: true });
+    let mediaUrl: string | null = null;
+
+    try {
+      const page = await browser.newPage();
+      
+
+      // Supprimer les popups
+      const popupHandler = async (target: any) => {
+        if (target.type() === 'page') {
+          const popup = await target.page();
+          await popup?.close();
+        }
+      };
+      browser.on('targetcreated', popupHandler);
+
+      const requestPromise = page.waitForRequest(request =>
+        request.url().includes('dl?op=get_slides'),
+        { timeout: 10000 } 
+      );
+
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      const request = await requestPromise;
+      mediaUrl = request.url();
+
+      return mediaUrl;
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'extraction de ${url}:`, error);
+      return null;
+    } finally {
+      await browser.close();
+    }
+  }
 }

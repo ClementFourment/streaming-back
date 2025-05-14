@@ -3,7 +3,7 @@ import sources from '../service/sources';
 
 
 module.exports = (app: Express) => {
-    app.get('/get-temporary-url', async (req: Request, res: Response) => {
+    app.get('/get-thumbnails', async (req: Request, res: Response) => {
 
         const title = req.query.title as string;
         const episode = req.query.episode as string;
@@ -21,8 +21,8 @@ module.exports = (app: Express) => {
         const classe = new sourceFound.src();
       
         try {
-          const url = await classe.getUrl(req, res, +episode);
-          res.json({ url });
+          const thumbnails = await classe.getThumbnails(req, res, +episode);
+          res.json({ thumbnails });
         } catch (error) {
           console.error('Erreur dans getUrl:', error);
           res.status(500).json({ error: 'Erreur serveur.' });
