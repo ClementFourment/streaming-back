@@ -36,6 +36,7 @@ require('./src/routes/getEpisode')(app);
 require('./src/routes/getThumbnails')(app);
 require('./src/routes/harryPotter')(app);
 require('./src/routes/ageDeGlace')(app);
+require('./src/routes/debug')(app);
 
 app.listen(port, () => {
   console.log(`Serveur démarré sur http://localhost:${port}`);
