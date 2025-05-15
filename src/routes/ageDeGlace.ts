@@ -6,7 +6,8 @@ import * as https from "https";
 
 module.exports = (app: Express) => {
     app.get('/video/age-de-glace', async (req: Request, res: Response) => {
-
+        res.setHeader('ngrok-skip-browser-warning', 'true');
+        console.log('oui on get get')
         const episode = req.query.episode as string;
         if (!episode || episode == "") {
           res.status(400).json({ error: 'Episode de vidéo requis.' });
@@ -34,19 +35,25 @@ module.exports = (app: Express) => {
             headers: {
             "Range": range,
             "Referer": "https://xalaflix.io/",
-            "User-Agent": req.headers["user-agent"]
+            "User-Agent": req.headers["user-agent"] || "",
+            "ngrok-skip-browser-warning": "true"
             },
             agent: new https.Agent({ keepAlive: true })
         };
         
         
-        https.get(videoUrls[+episode], options, (streamRes: IncomingMessage) => {
-            const { statusCode, headers } = streamRes;
-            
-            res.writeHead(streamRes.statusCode || 200, streamRes.headers);
-            streamRes.pipe(res, { end: true });
+        https.get(videoUrls[(+episode) - 1], options, (streamRes) => {
+            const contentType = streamRes.headers["content-type"] || "video/mp4";
+
+            res.writeHead(streamRes.statusCode || 206, {
+                ...streamRes.headers,
+                "Content-Type": "video/mp4",
+                "Accept-Ranges": "bytes",
+                "Access-Control-Allow-Origin": "*"              
+            });
+            streamRes.pipe(res);
         }).on("error", (err) => {
-            res.status(500).send("Erreur proxy vidéo: " + err.message);
+            res.status(500).send("Erreur vidéo : " + err.message);
         });
         
         

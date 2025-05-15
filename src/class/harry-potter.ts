@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import puppeteer from 'puppeteer';
 const axios = require('axios');
-import host from '../service/hosts';
+import hosts from '../service/hosts';
 
 export class HarryPotter {
 
@@ -9,19 +9,20 @@ export class HarryPotter {
 
 private urls = {
     urls1: [
-        `${host}/video/harry-potter?episode=1`,
-        `${host}/video/harry-potter?episode=2`, //`https://sanglier.online/Harry-Potter-et-la-Chambre-des-secrets.mp4`
-        `${host}/video/harry-potter?episode=3`,
-        `${host}/video/harry-potter?episode=4`,
-        `${host}/video/harry-potter?episode=5`,
-        `${host}/video/harry-potter?episode=6`,
-        `${host}/video/harry-potter?episode=7`,
-        `${host}/video/harry-potter?episode=8`,
+        `${hosts.hostsBack}/video/harry-potter?episode=1`,
+        `${hosts.hostsBack}/video/harry-potter?episode=2`, //`https://sanglier.online/Harry-Potter-et-la-Chambre-des-secrets.mp4`
+        `${hosts.hostsBack}/video/harry-potter?episode=3`,
+        `${hosts.hostsBack}/video/harry-potter?episode=4`,
+        `${hosts.hostsBack}/video/harry-potter?episode=5`,
+        `${hosts.hostsBack}/video/harry-potter?episode=6`,
+        `${hosts.hostsBack}/video/harry-potter?episode=7`,
+        `${hosts.hostsBack}/video/harry-potter?episode=8`,
     ]
 }; 
 
 
   public getNbEpisodes() {
+    console.log(hosts.hostsBack)
     return this.urls.urls1.length;
   }
 

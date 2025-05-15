@@ -1,7 +1,9 @@
 
-const isLocal = true;
+const isLocal = false;
 
-const hosts = ['https://3eef-2a04-cec2-b-c01a-b161-1e7-5775-652c.ngrok-free.app', 'http://localhost:3000']
-const host = hosts[+isLocal];
+const hostsBack = ['https://d4d8-2a04-cec2-b-9e25-7439-f02c-ed0c-a7ae.ngrok-free.app', 'http://localhost:3000'];
+const hostsFront = ['https://92db-2a04-cec2-b-9e25-7439-f02c-ed0c-a7ae.ngrok-free.app', 'http://localhost:2000'];
 
-export default host;
+const hosts = {hostsBack: hostsBack[+isLocal], hostsFront: hostsFront[+isLocal]};
+
+export default hosts;

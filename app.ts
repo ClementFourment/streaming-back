@@ -6,6 +6,7 @@ import { sequelize } from './src/db/sequelize';
 
 import './src/models/User';
 import './src/models/WatchProgress';
+import hosts from './src/service/hosts';
 
 const app = express();
 const port = 3000;
@@ -13,7 +14,7 @@ const port = 3000;
 
 
 app.use(cors({
-  origin: ['https://369e-2a04-cec2-b-c01a-b161-1e7-5775-652c.ngrok-free.app', 'http://localhost:4200'],
+  origin: [hosts.hostsFront],
   credentials: true 
 }));
 app.use(bodyParser.json());

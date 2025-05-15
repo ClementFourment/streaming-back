@@ -1,18 +1,18 @@
 import express, { Request, Response } from 'express';
 import puppeteer from 'puppeteer';
 const axios = require('axios');
-import host from '../service/hosts';
+import hosts from '../service/hosts';
 export class AgeDeGlace {
 
     
 
 private urls = {
     urls1: [
-        `${host}/video/age-de-glace?episode=1`,
-        `${host}/video/age-de-glace?episode=2`, 
-        `${host}/video/age-de-glace?episode=3`,
-        `${host}/video/age-de-glace?episode=4`,
-        `${host}/video/age-de-glace?episode=5`
+        `${hosts.hostsBack}/video/age-de-glace?episode=1`,
+        `${hosts.hostsBack}/video/age-de-glace?episode=2`, 
+        `${hosts.hostsBack}/video/age-de-glace?episode=3`,
+        `${hosts.hostsBack}/video/age-de-glace?episode=4`,
+        `${hosts.hostsBack}/video/age-de-glace?episode=5`
     ]
 }; 
 
